@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GymTracker Pro</title>
+  <meta name="theme-color" content="#f97316">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GymTracker">
+  <link rel="manifest" id="pwa-manifest">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 2px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+    @keyframes popIn { from { transform:scale(0.92); opacity:0; } to { transform:scale(1); opacity:1; } }
+    .fade-up { animation: fadeUp 0.2s ease forwards; }
+    .slide-up-anim { animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1) forwards; }
+    .pop-in { animation: popIn 0.18s ease forwards; }
+    .card-press { transition: transform 0.12s, box-shadow 0.12s; }
+    .card-press:active { transform: scale(0.97); }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px !important; appearance: none; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen pb-20">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  HEADER                                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<header class="bg-gray-900/95 backdrop-blur border-b border-gray-800 sticky top-0 z-30 px-4 py-3">
+  <div class="max-w-lg mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <h1 class="text-lg font-bold tracking-tight">Gym<span class="text-orange-500">Tracker</span></h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="setView('workout')" id="workout-badge"
+        class="hidden items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow shadow-orange-500/30">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span id="badge-text">0</span>
+      </button>
+      <button onclick="openSettings()" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-800">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  VIEWS                                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<main class="max-w-lg mx-auto">
+  <div id="view-library"  class="px-4 py-4"></div>
+  <div id="view-workout"  class="px-4 py-4 hidden"></div>
+  <div id="view-history"  class="px-4 py-4 hidden"></div>
+  <div id="view-stats"    class="px-4 py-4 hidden"></div>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  BOTTOM NAV                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<nav class="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur border-t border-gray-800 z-30 safe-bottom">
+  <div class="max-w-lg mx-auto flex">
+    <button onclick="setView('library')"  id="nav-library"  class="nav-btn flex-1 py-3 flex flex-col items-center gap-1">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="text-xs">Library</span>
+    </button>
+    <button onclick="setView('workout')" id="nav-workout" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+      <span class="text-xs">Workout</span>
+    </button>
+    <button onclick="setView('history')" id="nav-history" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="text-xs">History</span>
+    </button>
+    <button onclick="setView('stats')"   id="nav-stats"   class="nav-btn flex-1 py-3 flex flex-col items-center gap-1">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span class="text-xs">Stats</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  LOG MODAL (bottom sheet)                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="modal-overlay" onclick="closeModal()"
+  class="hidden fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"></div>
+
+<div id="modal"
+  class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 rounded-t-2xl z-50 overflow-y-auto"
+  style="max-height:88vh;">
+  <div class="px-4 pt-3 pb-6">
+    <!-- drag handle -->
+    <div class="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-4"></div>
+
+    <!-- exercise header -->
+    <div class="flex items-center gap-3 mb-3">
+      <div id="modal-img" class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative bg-gray-800"></div>
+      <div class="flex-1 min-w-0">
+        <h2 id="modal-title" class="text-base font-bold leading-tight"></h2>
+        <span id="modal-cat" class="text-xs font-medium text-orange-400"></span>
+      </div>
+      <div id="modal-pr-badge" class="hidden flex-shrink-0 bg-yellow-500/20 border border-yellow-500/40 rounded-lg px-2 py-1 text-center">
+        <div class="text-xs text-yellow-400 font-bold leading-none">⭐ PR</div>
+        <div id="modal-pr-val" class="text-xs text-yellow-300 font-bold mt-0.5"></div>
+      </div>
+    </div>
+
+    <!-- last session hint -->
+    <div id="modal-prev" class="hidden mb-3 px-3 py-2 bg-gray-800 rounded-xl text-xs text-gray-400 leading-relaxed"></div>
+
+    <!-- sets header -->
+    <div class="grid grid-cols-[28px_1fr_1fr_28px] gap-2 mb-1.5 px-1">
+      <div class="text-xs text-gray-600 text-center">#</div>
+      <div class="text-xs text-gray-500 text-center">Weight (kg)</div>
+      <div class="text-xs text-gray-500 text-center">Reps</div>
+      <div></div>
+    </div>
+
+    <!-- sets container -->
+    <div id="modal-sets"></div>
+
+    <!-- add set -->
+    <button onclick="addModalSet()"
+      class="w-full mt-2 mb-4 py-2.5 border border-dashed border-gray-700 text-gray-500 hover:text-orange-400 hover:border-orange-500 text-sm rounded-xl transition-colors">
+      + Add Set
+    </button>
+
+    <!-- save button -->
+    <button onclick="saveToWorkout()"
+      class="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold rounded-xl text-sm transition-colors shadow-lg shadow-orange-500/20">
+      Save to Workout
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  TOAST                                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="toast"
+  class="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 text-white text-sm px-4 py-2.5 rounded-xl shadow-xl z-[60] transition-all duration-300 pointer-events-none"
+  style="opacity:0; transform:translateX(-50%) translateY(-6px)"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SETTINGS MODAL                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="settings-overlay" onclick="closeSettings()"
+  class="hidden fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"></div>
+
+<div id="settings-modal"
+  class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 rounded-t-2xl z-50"
+  style="max-height:88vh; overflow-y:auto;">
+  <div class="px-4 pt-3 pb-8">
+    <div class="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-5"></div>
+    <h2 class="text-lg font-bold mb-1">Settings</h2>
+    <p class="text-xs text-gray-500 mb-5">Manage your data &amp; install the app</p>
+
+    <!-- Data section -->
+    <div class="mb-6">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Data &amp; Backup</div>
+      <div class="space-y-2">
+
+        <!-- Storage info -->
+        <div id="storage-info" class="bg-gray-800 rounded-xl px-4 py-3 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium">Workout Sessions</div>
+            <div id="storage-detail" class="text-xs text-gray-500 mt-0.5"></div>
+          </div>
+          <div id="storage-count" class="text-2xl font-bold text-orange-500"></div>
+        </div>
+
+        <!-- Export -->
+        <button onclick="exportData()"
+          class="w-full flex items-center gap-3 bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 rounded-xl px-4 py-3.5 text-left transition-colors group">
+          <div class="w-9 h-9 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold">Export Backup</div>
+            <div class="text-xs text-gray-500">Download all data as JSON file</div>
+          </div>
+          <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <!-- Import -->
+        <label class="w-full flex items-center gap-3 bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 rounded-xl px-4 py-3.5 text-left transition-colors group cursor-pointer">
+          <div class="w-9 h-9 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold">Import Backup</div>
+            <div class="text-xs text-gray-500">Restore from a JSON backup file</div>
+          </div>
+          <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          <input type="file" accept=".json" onchange="importData(event)" class="hidden"/>
+        </label>
+
+        <!-- Clear data -->
+        <button onclick="clearAllData()"
+          class="w-full flex items-center gap-3 bg-gray-800 hover:bg-gray-750 border border-red-900/40 hover:border-red-700/60 rounded-xl px-4 py-3.5 text-left transition-colors group">
+          <div class="w-9 h-9 bg-red-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-red-400">Clear All Data</div>
+            <div class="text-xs text-gray-500">Permanently delete all workouts</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Install section -->
+    <div class="mb-4">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Install on Phone</div>
+      <div class="bg-gray-800 border border-orange-900/40 rounded-xl p-4 space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="text-xl flex-shrink-0 mt-0.5">1️⃣</span>
+          <div>
+            <div class="text-sm font-semibold">Host on GitHub Pages</div>
+            <div class="text-xs text-gray-400 mt-0.5">Create a free GitHub repo → upload this file as <code class="text-orange-400 bg-gray-900 px-1 rounded">index.html</code> → enable GitHub Pages in repo Settings → Pages</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-xl flex-shrink-0 mt-0.5">2️⃣</span>
+          <div>
+            <div class="text-sm font-semibold">Open on your phone</div>
+            <div class="text-xs text-gray-400 mt-0.5">Visit <code class="text-orange-400 bg-gray-900 px-1 rounded">https://yourname.github.io/gymtracker</code> in Safari (iOS) or Chrome (Android)</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-xl flex-shrink-0 mt-0.5">3️⃣</span>
+          <div>
+            <div class="text-sm font-semibold">Add to Home Screen</div>
+            <div class="text-xs text-gray-400 mt-0.5"><strong class="text-gray-300">iOS:</strong> Share → "Add to Home Screen" &nbsp;|&nbsp; <strong class="text-gray-300">Android:</strong> Menu → "Install app" — works offline, looks like a native app</div>
+          </div>
+        </div>
+        <div id="pwa-install-btn-wrap" class="hidden pt-1">
+          <button onclick="triggerPwaInstall()"
+            class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-sm transition-colors">
+            Install App Now ⚡
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- localStorage note -->
+    <div class="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-4 py-3 flex gap-3">
+      <span class="text-lg flex-shrink-0">⚠️</span>
+      <p class="text-xs text-yellow-300/80 leading-relaxed">
+        Data is stored in your browser's <strong>localStorage</strong> and persists indefinitely — but will be lost if you clear browser data. <strong>Export a backup regularly</strong> to stay safe.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  JAVASCRIPT                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+
+// ────────────────────────────────────────────────────────────
+//  DATA
+// ────────────────────────────────────────────────────────────
+
+const EXERCISES = {
+  Chest:     [
+    { name: 'Bench Press',    imgId: 'Barbell_Bench_Press_-_Medium_Grip' },
+    { name: 'Incline Press',  imgId: 'Incline_Barbell_Bench_Press' },
+    { name: 'Cable Flyes',    imgId: 'Cable_Cross-Over' },
+  ],
+  Triceps:   [
+    { name: 'Tricep Pushdown', imgId: 'Triceps_Pushdown' },
+    { name: 'Skull Crushers',  imgId: 'Lying_Triceps_Press' },
+    { name: 'Dips',            imgId: 'Dips_-_Tricep_Version' },
+  ],
+  Biceps:    [
+    { name: 'Barbell Curl',  imgId: 'Barbell_Curl' },
+    { name: 'Hammer Curl',   imgId: 'Hammer_Curls' },
+    { name: 'Preacher Curl', imgId: 'Preacher_Curl' },
+  ],
+  Back:      [
+    { name: 'Deadlift',       imgId: 'Deadlift' },
+    { name: 'Pull-ups',       imgId: 'Pullups' },
+    { name: 'Seated Row',     imgId: 'Seated_Cable_Rows' },
+    { name: 'Lat Pulldown',   imgId: 'Wide-Grip_Lat_Pulldown' },
+  ],
+  Shoulders: [
+    { name: 'Overhead Press', imgId: 'Barbell_Shoulder_Press' },
+    { name: 'Lateral Raise',  imgId: 'Side_Lateral_Raise' },
+    { name: 'Face Pull',      imgId: 'Face_Pull' },
+  ],
+  Legs:      [
+    { name: 'Squat',              imgId: 'Barbell_Squat' },
+    { name: 'Leg Press',          imgId: 'Leg_Press' },
+    { name: 'Romanian Deadlift',  imgId: 'Romanian_Deadlift' },
+    { name: 'Leg Curl',           imgId: 'Leg_Curl' },
+  ],
+};
+
+const CAT_META = {
+  Chest:     { g1:'#7f1d1d', g2:'#dc2626', icon:'🫁' },
+  Triceps:   { g1:'#7c2d12', g2:'#ea580c', icon:'💪' },
+  Biceps:    { g1:'#1e3a5f', g2:'#3b82f6', icon:'🦾' },
+  Back:      { g1:'#14532d', g2:'#16a34a', icon:'🏋️' },
+  Shoulders: { g1:'#4a1d96', g2:'#9333ea', icon:'🏆' },
+  Legs:      { g1:'#713f12', g2:'#ca8a04', icon:'🦵' },
+};
+
+// ────────────────────────────────────────────────────────────
+//  STATE
+// ────────────────────────────────────────────────────────────
+
+const state = {
+  view:          'library',
+  category:      'All',
+  search:        '',
+  activeWorkout: [],   // [{id, exercise, category, sets:[{weight,reps}]}]
+  modalEx:       null, // {name, imgId, category}
+  statsEx:       '',
+  workouts:      [],   // [{id, sessionId, date, exercise, category, sets}]
+};
+
+const charts = {};
+let setCounter = 0;
+
+// ────────────────────────────────────────────────────────────
+//  STORAGE
+// ────────────────────────────────────────────────────────────
+
+function loadData() {
+  try { state.workouts      = JSON.parse(localStorage.getItem('gt_workouts') || '[]'); } catch { state.workouts = []; }
+  try { state.activeWorkout = JSON.parse(localStorage.getItem('gt_active')   || '[]'); } catch { state.activeWorkout = []; }
+}
+function persistWorkouts() { localStorage.setItem('gt_workouts', JSON.stringify(state.workouts)); }
+function persistActive()   { localStorage.setItem('gt_active',   JSON.stringify(state.activeWorkout)); }
+
+// ────────────────────────────────────────────────────────────
+//  UTILS
+// ────────────────────────────────────────────────────────────
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+}
+function fmtShort(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+function fmtNum(n) { return n % 1 === 0 ? String(n) : n.toFixed(1); }
+
+function imgUrl(id) {
+  return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${id}/0.jpg`;
+}
+
+function catBg(cat) {
+  const m = CAT_META[cat] || { g1:'#374151', g2:'#6b7280' };
+  return `linear-gradient(135deg, ${m.g1}, ${m.g2})`;
+}
+function catIcon(cat) { return (CAT_META[cat] || { icon:'⚡' }).icon; }
+
+function fallbackDiv(cat, name) {
+  return `<div class="absolute inset-0 flex flex-col items-center justify-center gap-1"
+    style="background:${catBg(cat)}">
+    <span class="text-2xl">${catIcon(cat)}</span>
+    <span class="text-xs text-white/70 text-center px-1 leading-tight font-medium">${name.split(' ').slice(0,2).join(' ')}</span>
+  </div>`;
+}
+
+function getWorkoutsFor(name) {
+  return state.workouts.filter(w => w.exercise === name)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+function getPR(name) {
+  let pr = 0;
+  getWorkoutsFor(name).forEach(w => w.sets.forEach(s => { if (s.weight > pr) pr = s.weight; }));
+  return pr;
+}
+
+function findEx(name) {
+  for (const [cat, list] of Object.entries(EXERCISES)) {
+    const ex = list.find(e => e.name === name);
+    if (ex) return { ...ex, category: cat };
+  }
+  return null;
+}
+
+// ────────────────────────────────────────────────────────────
+//  NAVIGATION
+// ────────────────────────────────────────────────────────────
+
+function setView(v) {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    const isActive = btn.id === `nav-${v}`;
+    btn.querySelector('svg').style.stroke = isActive ? '#f97316' : '#6b7280';
+    btn.querySelector('span').style.color = isActive ? '#f97316' : '#6b7280';
+  });
+
+  ['library','workout','history','stats'].forEach(name => {
+    document.getElementById(`view-${name}`).classList.toggle('hidden', name !== v);
+  });
+
+  state.view = v;
+  renderView(v);
+  updateBadge();
+}
+
+function updateBadge() {
+  const n = state.activeWorkout.length;
+  const el = document.getElementById('workout-badge');
+  if (n > 0) {
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+    document.getElementById('badge-text').textContent = `${n} exercise${n !== 1 ? 's' : ''}`;
+  } else {
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+  }
+}
+
+function renderView(v) {
+  if (v === 'library')  renderLibrary();
+  if (v === 'workout')  renderWorkout();
+  if (v === 'history')  renderHistory();
+  if (v === 'stats')    renderStats();
+}
+
+// ────────────────────────────────────────────────────────────
+//  LIBRARY VIEW
+// ────────────────────────────────────────────────────────────
+
+function renderLibrary() {
+  const el  = document.getElementById('view-library');
+  const q   = state.search.toLowerCase();
+  const sel = state.category;
+  const cats = ['All', ...Object.keys(EXERCISES)];
+
+  const items = [];
+  for (const [cat, list] of Object.entries(EXERCISES)) {
+    if (sel !== 'All' && sel !== cat) continue;
+    list.forEach(ex => {
+      if (!q || ex.name.toLowerCase().includes(q)) items.push({ ...ex, category: cat });
+    });
+  }
+
+  el.innerHTML = `
+    <!-- Search -->
+    <div class="relative mb-4">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" placeholder="Search exercises…"
+        value="${state.search.replace(/"/g,'&quot;')}"
+        oninput="state.search=this.value; renderLibrary()"
+        class="w-full bg-gray-900 border border-gray-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors"/>
+    </div>
+
+    <!-- Category pills -->
+    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 mb-4">
+      ${cats.map(c => `
+        <button onclick="state.category='${c}'; renderLibrary()"
+          class="flex-shrink-0 text-xs font-semibold px-3.5 py-1.5 rounded-full transition-colors ${
+            sel === c
+              ? 'bg-orange-500 text-white shadow shadow-orange-500/30'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }">${c}</button>
+      `).join('')}
+    </div>
+
+    <!-- Grid -->
+    ${items.length === 0 ? `
+      <div class="flex flex-col items-center justify-center py-20 text-gray-600">
+        <div class="text-5xl mb-3">🔍</div>
+        <p class="text-sm">No exercises found</p>
+      </div>
+    ` : `
+      <div class="grid grid-cols-2 gap-3">
+        ${items.map(ex => exerciseCard(ex)).join('')}
+      </div>
+    `}
+  `;
+}
+
+function exerciseCard(ex) {
+  const pr           = getPR(ex.name);
+  const sessionCount = getWorkoutsFor(ex.name).length;
+  const inWorkout    = state.activeWorkout.some(e => e.exercise === ex.name);
+
+  return `
+    <div onclick="openModal('${ex.name.replace(/'/g, "\\'")}')"
+      class="card-press bg-gray-900 border ${inWorkout ? 'border-orange-500/60' : 'border-gray-800'} rounded-2xl overflow-hidden cursor-pointer select-none">
+
+      <!-- image area -->
+      <div class="h-36 relative overflow-hidden" style="background:${catBg(ex.category)}">
+        ${fallbackDiv(ex.category, ex.name)}
+        <img src="${imgUrl(ex.imgId)}" alt="${ex.name}"
+          class="absolute inset-0 w-full h-full object-cover"
+          onerror="this.remove()" loading="lazy"/>
+        <!-- overlays -->
+        <div class="absolute top-2 left-2">
+          <span class="text-xs bg-black/50 text-white/80 px-1.5 py-0.5 rounded-md font-medium">${ex.category}</span>
+        </div>
+        ${pr > 0 ? `
+          <div class="absolute top-2 right-2">
+            <span class="text-xs bg-yellow-500 text-gray-900 px-1.5 py-0.5 rounded-md font-bold">⭐ ${fmtNum(pr)}kg</span>
+          </div>
+        ` : ''}
+        ${inWorkout ? `
+          <div class="absolute bottom-2 right-2">
+            <span class="text-xs bg-orange-500 text-white px-1.5 py-0.5 rounded-md font-bold">✓ Added</span>
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- info -->
+      <div class="p-3">
+        <h3 class="text-sm font-semibold leading-tight mb-0.5">${ex.name}</h3>
+        <p class="text-xs text-gray-500">
+          ${sessionCount > 0 ? `${sessionCount} session${sessionCount > 1 ? 's' : ''}` : 'No sessions yet'}
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+// ────────────────────────────────────────────────────────────
+//  LOG MODAL
+// ────────────────────────────────────────────────────────────
+
+function openModal(name) {
+  const ex = findEx(name);
+  if (!ex) return;
+  state.modalEx = ex;
+  setCounter = 0;
+
+  // title / category / PR
+  document.getElementById('modal-title').textContent = ex.name;
+  document.getElementById('modal-cat').textContent   = ex.category;
+
+  const pr = getPR(name);
+  const prBadge = document.getElementById('modal-pr-badge');
+  if (pr > 0) {
+    prBadge.classList.remove('hidden');
+    document.getElementById('modal-pr-val').textContent = `${fmtNum(pr)} kg`;
+  } else {
+    prBadge.classList.add('hidden');
+  }
+
+  // image
+  const imgEl = document.getElementById('modal-img');
+  imgEl.innerHTML = `
+    ${fallbackDiv(ex.category, ex.name)}
+    <img src="${imgUrl(ex.imgId)}" alt="${ex.name}"
+      class="absolute inset-0 w-full h-full object-cover rounded-xl"
+      onerror="this.remove()" loading="lazy"/>
+  `;
+
+  // previous session
+  const history = getWorkoutsFor(name);
+  const prevEl  = document.getElementById('modal-prev');
+  if (history.length > 0) {
+    const last = history[history.length - 1];
+    const setStr = last.sets.map(s => `${fmtNum(s.weight)}kg×${s.reps}`).join(', ');
+    prevEl.classList.remove('hidden');
+    prevEl.innerHTML = `<span class="text-orange-400 font-semibold">Last:</span> ${setStr} <span class="text-gray-600">· ${fmtShort(last.date)}</span>`;
+  } else {
+    prevEl.classList.add('hidden');
+  }
+
+  // pre-fill sets
+  const setsEl = document.getElementById('modal-sets');
+  setsEl.innerHTML = '';
+  const existing = state.activeWorkout.find(e => e.exercise === name);
+  if (existing && existing.sets.length > 0) {
+    existing.sets.forEach(s => addModalSet(s.weight, s.reps));
+  } else {
+    addModalSet();
+  }
+
+  // show
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  const modal = document.getElementById('modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('slide-up-anim');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function addModalSet(weight = '', reps = '') {
+  setCounter++;
+  const setsEl  = document.getElementById('modal-sets');
+  const setNum_ = setsEl.children.length + 1;
+
+  const row = document.createElement('div');
+  row.className = 'grid grid-cols-[28px_1fr_1fr_28px] gap-2 mb-2 items-center pop-in';
+  row.dataset.sid = setCounter;
+  row.innerHTML = `
+    <div class="w-7 h-7 bg-gray-800 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 set-num">${setNum_}</div>
+    <input type="number" inputmode="decimal" step="0.5" min="0" placeholder="kg"
+      value="${weight}"
+      class="w-input bg-gray-800 border border-gray-700 rounded-lg px-2 py-2.5 text-sm text-center text-white font-semibold focus:outline-none focus:border-orange-500 transition-colors w-full"/>
+    <input type="number" inputmode="numeric" step="1" min="0" placeholder="reps"
+      value="${reps}"
+      class="r-input bg-gray-800 border border-gray-700 rounded-lg px-2 py-2.5 text-sm text-center text-white font-semibold focus:outline-none focus:border-orange-500 transition-colors w-full"/>
+    <button onclick="removeModalSet(this)"
+      class="w-7 h-7 flex items-center justify-center text-gray-600 hover:text-red-400 transition-colors rounded-lg">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  `;
+  setsEl.appendChild(row);
+}
+
+function removeModalSet(btn) {
+  const setsEl = document.getElementById('modal-sets');
+  if (setsEl.children.length <= 1) return;
+  btn.closest('[data-sid]').remove();
+  [...setsEl.querySelectorAll('.set-num')].forEach((el, i) => el.textContent = i + 1);
+}
+
+function saveToWorkout() {
+  const rows = document.querySelectorAll('#modal-sets [data-sid]');
+  const sets = [];
+
+  rows.forEach(row => {
+    const w = parseFloat(row.querySelector('.w-input').value);
+    const r = parseInt(row.querySelector('.r-input').value);
+    if (!isNaN(w) && !isNaN(r) && r > 0) sets.push({ weight: isNaN(w) ? 0 : w, reps: r });
+  });
+
+  if (sets.length === 0) { showToast('Enter at least one valid set!'); return; }
+
+  const ex  = state.modalEx;
+  const idx = state.activeWorkout.findIndex(e => e.exercise === ex.name);
+
+  if (idx >= 0) {
+    state.activeWorkout[idx].sets = sets;
+  } else {
+    state.activeWorkout.push({ id: genId(), exercise: ex.name, category: ex.category, sets });
+  }
+
+  persistActive();
+  updateBadge();
+  closeModal();
+  showToast(`${ex.name} added to workout!`);
+
+  if (state.view === 'library') renderLibrary();
+}
+
+// ────────────────────────────────────────────────────────────
+//  WORKOUT VIEW
+// ────────────────────────────────────────────────────────────
+
+function renderWorkout() {
+  const el = document.getElementById('view-workout');
+  const aw = state.activeWorkout;
+
+  if (aw.length === 0) {
+    el.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-20 text-center fade-up">
+        <div class="text-7xl mb-4">🏋️</div>
+        <h2 class="text-xl font-bold mb-2">No Active Workout</h2>
+        <p class="text-sm text-gray-500 mb-6 max-w-xs">Head to the Library and tap an exercise to start logging</p>
+        <button onclick="setView('library')"
+          class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow shadow-orange-500/25">
+          Browse Exercises
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const totalSets = aw.reduce((s, e) => s + e.sets.length, 0);
+  const totalVol  = aw.reduce((s, e) => s + e.sets.reduce((a, set) => a + set.weight * set.reps, 0), 0);
+
+  el.innerHTML = `
+    <div class="mb-5 fade-up">
+      <h2 class="text-xl font-bold">Today's Workout</h2>
+      <p class="text-sm text-gray-500">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</p>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      ${[
+        ['Exercises', aw.length],
+        ['Sets', totalSets],
+        ['Volume', `${fmtNum(Math.round(totalVol))} kg`],
+      ].map(([label, val]) => `
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+          <div class="text-lg font-bold text-orange-500 leading-tight">${val}</div>
+          <div class="text-xs text-gray-500 mt-0.5">${label}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Exercise list -->
+    <div class="space-y-3 mb-4">
+      ${aw.map((item, idx) => {
+        const maxW  = Math.max(...item.sets.map(s => s.weight));
+        const pr    = getPR(item.exercise);
+        const isPR  = pr > 0 && maxW >= pr;
+        return `
+          <div class="bg-gray-900 border ${isPR ? 'border-yellow-700/50' : 'border-gray-800'} rounded-2xl p-4 fade-up">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold">${item.exercise}</span>
+                  ${isPR ? '<span class="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-md font-bold">⭐ PR</span>' : ''}
+                </div>
+                <span class="text-xs text-orange-400">${item.category}</span>
+              </div>
+              <div class="flex gap-1.5 flex-shrink-0">
+                <button onclick="openModal('${item.exercise.replace(/'/g, "\\'")}')"
+                  class="text-xs text-gray-400 hover:text-orange-400 bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded-lg transition-colors">Edit</button>
+                <button onclick="removeFromWorkout(${idx})"
+                  class="text-xs text-gray-400 hover:text-red-400 bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded-lg transition-colors">✕</button>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${item.sets.map((s, si) => `
+                <div class="bg-gray-800 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                  <div class="text-xs text-gray-500 mb-0.5">Set ${si+1}</div>
+                  <div class="text-sm font-bold leading-tight">${fmtNum(s.weight)}<span class="text-xs text-gray-400 font-normal">kg</span></div>
+                  <div class="text-xs text-gray-400">${s.reps} reps</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-2">
+      <button onclick="setView('library')"
+        class="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors text-sm">
+        + Add More Exercises
+      </button>
+      <button onclick="finishWorkout()"
+        class="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-colors shadow shadow-orange-500/25">
+        Finish Workout 🏁
+      </button>
+      <button onclick="discardWorkout()"
+        class="w-full py-2.5 text-gray-600 hover:text-red-400 text-sm transition-colors">
+        Discard Workout
+      </button>
+    </div>
+  `;
+}
+
+function removeFromWorkout(idx) {
+  state.activeWorkout.splice(idx, 1);
+  persistActive();
+  updateBadge();
+  renderWorkout();
+  if (state.view === 'library') renderLibrary();
+}
+
+function finishWorkout() {
+  if (state.activeWorkout.length === 0) return;
+  const date = new Date().toISOString();
+  const sid  = genId();
+
+  state.activeWorkout.forEach(item => {
+    state.workouts.push({
+      id: genId(), sessionId: sid, date,
+      exercise: item.exercise, category: item.category, sets: item.sets,
+    });
+  });
+
+  persistWorkouts();
+  state.activeWorkout = [];
+  persistActive();
+  updateBadge();
+  showToast('Workout saved! Great work 💪');
+  setView('history');
+}
+
+function discardWorkout() {
+  if (!confirm('Discard current workout? This cannot be undone.')) return;
+  state.activeWorkout = [];
+  persistActive();
+  updateBadge();
+  renderWorkout();
+}
+
+// ────────────────────────────────────────────────────────────
+//  HISTORY VIEW
+// ────────────────────────────────────────────────────────────
+
+function renderHistory() {
+  const el = document.getElementById('view-history');
+
+  if (state.workouts.length === 0) {
+    el.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-20 text-center fade-up">
+        <div class="text-7xl mb-4">📋</div>
+        <h2 class="text-xl font-bold mb-2">No Workout History</h2>
+        <p class="text-sm text-gray-500">Complete your first workout to see it here</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Group by sessionId
+  const sessionMap = {};
+  [...state.workouts].reverse().forEach(w => {
+    const key = w.sessionId || w.date.slice(0, 13);
+    if (!sessionMap[key]) sessionMap[key] = { key, date: w.date, exercises: [] };
+    sessionMap[key].exercises.push(w);
+  });
+
+  const sessions = Object.values(sessionMap);
+
+  el.innerHTML = `
+    <h2 class="text-xl font-bold mb-4 fade-up">Workout History</h2>
+    <div class="space-y-4">
+      ${sessions.map(session => {
+        const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
+        const totalVol  = session.exercises.reduce((sum, e) =>
+          sum + e.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0);
+
+        return `
+          <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden fade-up">
+            <div class="px-4 py-3 border-b border-gray-800 flex items-start justify-between gap-2">
+              <div>
+                <div class="font-semibold text-sm">${fmtDate(session.date)}</div>
+                <div class="text-xs text-gray-500 mt-0.5">
+                  ${session.exercises.length} exercise${session.exercises.length !== 1 ? 's' : ''}
+                  · ${totalSets} sets
+                  · ${fmtNum(Math.round(totalVol))} kg volume
+                </div>
+              </div>
+              <button onclick="deleteSession('${session.key}')"
+                class="text-gray-600 hover:text-red-400 transition-colors p-1 flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+            <div class="divide-y divide-gray-800/50">
+              ${session.exercises.map(ex => {
+                const maxW = Math.max(...ex.sets.map(s => s.weight));
+                const pr   = getPR(ex.exercise);
+                const isPR = pr > 0 && maxW >= pr;
+                return `
+                  <div class="px-4 py-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 flex-wrap min-w-0">
+                      <span class="text-sm font-medium truncate">${ex.exercise}</span>
+                      ${isPR ? '<span class="text-xs text-yellow-400 font-bold flex-shrink-0">⭐ PR</span>' : ''}
+                    </div>
+                    <div class="text-xs text-gray-500 flex-shrink-0 text-right">
+                      ${ex.sets.map(s => `${fmtNum(s.weight)}×${s.reps}`).join(' · ')}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function deleteSession(key) {
+  if (!confirm('Delete this workout session?')) return;
+  state.workouts = state.workouts.filter(w => (w.sessionId || w.date.slice(0,13)) !== key);
+  persistWorkouts();
+  renderHistory();
+}
+
+// ────────────────────────────────────────────────────────────
+//  STATS VIEW
+// ────────────────────────────────────────────────────────────
+
+function renderStats() {
+  const el = document.getElementById('view-stats');
+
+  const logged = [...new Set(state.workouts.map(w => w.exercise))].sort();
+
+  if (logged.length === 0) {
+    el.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-20 text-center fade-up">
+        <div class="text-7xl mb-4">📊</div>
+        <h2 class="text-xl font-bold mb-2">No Data Yet</h2>
+        <p class="text-sm text-gray-500">Log workouts to see your progress charts</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (!state.statsEx || !logged.includes(state.statsEx)) state.statsEx = logged[0];
+
+  const history  = getWorkoutsFor(state.statsEx);
+  const pr       = getPR(state.statsEx);
+  const totalVol = history.reduce((sum, w) => sum + w.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0);
+  const showCharts = history.length >= 2;
+
+  const weightData = history.map(w => ({ x: fmtShort(w.date), y: Math.max(...w.sets.map(s => s.weight)) }));
+  const volData    = history.map(w => ({ x: fmtShort(w.date), y: Math.round(w.sets.reduce((s, set) => s + set.weight * set.reps, 0)) }));
+
+  el.innerHTML = `
+    <h2 class="text-xl font-bold mb-4 fade-up">Progress Stats</h2>
+
+    <!-- Exercise selector -->
+    <select onchange="state.statsEx=this.value; renderStats()"
+      class="w-full bg-gray-900 border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-orange-500 transition-colors">
+      ${logged.map(name => `<option value="${name}" ${name === state.statsEx ? 'selected' : ''}>${name}</option>`).join('')}
+    </select>
+
+    <!-- Stat cards -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="bg-gray-900 border border-yellow-800/50 rounded-xl p-3 text-center col-span-1">
+        <div class="text-xl font-bold text-yellow-400">⭐ ${pr > 0 ? fmtNum(pr) + ' kg' : '—'}</div>
+        <div class="text-xs text-gray-500 mt-0.5">Personal Record</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+        <div class="text-xl font-bold text-orange-500">${history.length}</div>
+        <div class="text-xs text-gray-500 mt-0.5">Sessions</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+        <div class="text-xl font-bold text-orange-500">${history.reduce((s,w)=>s+w.sets.length,0)}</div>
+        <div class="text-xs text-gray-500 mt-0.5">Total Sets</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+        <div class="text-xl font-bold text-orange-500">${fmtNum(Math.round(totalVol))}</div>
+        <div class="text-xs text-gray-500 mt-0.5">Total Vol (kg)</div>
+      </div>
+    </div>
+
+    ${!showCharts ? `
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center text-gray-500 text-sm mb-4">
+        Log at least <span class="text-gray-300 font-semibold">2 sessions</span> to see progress charts
+      </div>
+    ` : `
+      <!-- Max weight chart -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-4">
+        <h3 class="text-sm font-semibold text-gray-300 mb-3">Max Weight Over Time</h3>
+        <div style="position:relative;height:150px;">
+          <canvas id="chart-weight"></canvas>
+        </div>
+      </div>
+      <!-- Volume chart -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-4">
+        <h3 class="text-sm font-semibold text-gray-300 mb-3">Total Volume Over Time</h3>
+        <div style="position:relative;height:150px;">
+          <canvas id="chart-volume"></canvas>
+        </div>
+      </div>
+    `}
+
+    <!-- History table -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-4">
+      <div class="px-4 py-3 border-b border-gray-800">
+        <h3 class="text-sm font-semibold text-gray-300">Session History</h3>
+      </div>
+      <div class="divide-y divide-gray-800/50">
+        ${[...history].reverse().map(w => {
+          const maxW  = Math.max(...w.sets.map(s => s.weight));
+          const vol   = Math.round(w.sets.reduce((s, set) => s + set.weight * set.reps, 0));
+          const isPR  = pr > 0 && maxW >= pr;
+          return `
+            <div class="px-4 py-3">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-sm font-medium">${fmtShort(w.date)}</span>
+                <div class="flex items-center gap-2">
+                  ${isPR ? '<span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold">⭐ PR</span>' : ''}
+                  <span class="text-xs text-gray-600">vol: ${fmtNum(vol)} kg</span>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                ${w.sets.map((s, i) => `
+                  <span class="text-xs px-2.5 py-1 rounded-lg font-medium ${s.weight === pr && pr > 0 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-700/40' : 'bg-gray-800 text-gray-300'}">
+                    ${fmtNum(s.weight)} kg × ${s.reps}${s.weight === pr && pr > 0 ? ' ⭐' : ''}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  if (showCharts) {
+    requestAnimationFrame(() => {
+      buildChart('chart-weight', weightData, 'Max Weight (kg)', '#f97316');
+      buildChart('chart-volume', volData,    'Volume (kg)',      '#8b5cf6');
+    });
+  }
+}
+
+function buildChart(id, data, label, color) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+
+  charts[id] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.x),
+      datasets: [{
+        label,
+        data: data.map(d => d.y),
+        borderColor: color,
+        backgroundColor: color + '18',
+        borderWidth: 2.5,
+        pointBackgroundColor: color,
+        pointBorderColor: '#111827',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.35,
+        fill: true,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1f2937',
+          borderColor: color,
+          borderWidth: 1,
+          titleColor: '#f9fafb',
+          bodyColor: '#d1d5db',
+          padding: 10,
+          callbacks: {
+            label: ctx => ` ${fmtNum(ctx.parsed.y)} ${label.includes('Volume') ? 'kg' : 'kg'}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#4b5563', font: { size: 10 } },
+          grid:  { color: '#1f2937' },
+          border: { color: '#1f2937' },
+        },
+        y: {
+          ticks: { color: '#4b5563', font: { size: 10 } },
+          grid:  { color: '#1f2937' },
+          border: { color: '#1f2937' },
+        },
+      },
+    },
+  });
+}
+
+// ────────────────────────────────────────────────────────────
+//  TOAST
+// ────────────────────────────────────────────────────────────
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-50%) translateY(-6px)';
+  }, 2500);
+}
+
+// ────────────────────────────────────────────────────────────
+//  NAV STYLE (set initial active state)
+// ────────────────────────────────────────────────────────────
+
+function initNav() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.querySelector('svg').style.stroke = '#6b7280';
+    btn.querySelector('span').style.color = '#6b7280';
+  });
+  const active = document.getElementById('nav-library');
+  if (active) {
+    active.querySelector('svg').style.stroke = '#f97316';
+    active.querySelector('span').style.color = '#f97316';
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+//  SETTINGS
+// ────────────────────────────────────────────────────────────
+
+function openSettings() {
+  const sessionCount = [...new Set(state.workouts.map(w => w.sessionId || w.date.slice(0,13)))].length;
+  const totalSets    = state.workouts.reduce((s, w) => s + w.sets.length, 0);
+  document.getElementById('storage-count').textContent  = sessionCount;
+  document.getElementById('storage-detail').textContent = `${state.workouts.length} exercise logs · ${totalSets} sets total`;
+  document.getElementById('settings-overlay').classList.remove('hidden');
+  const modal = document.getElementById('settings-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('slide-up-anim');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.add('hidden');
+  document.getElementById('settings-overlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function exportData() {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    workouts: state.workouts,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href     = url;
+  a.download = `gymtracker-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded!');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      // support both raw array and wrapped export format
+      const incoming = Array.isArray(parsed) ? parsed : (parsed.workouts || []);
+      if (!Array.isArray(incoming)) throw new Error('Invalid format');
+
+      const existingIds = new Set(state.workouts.map(w => w.id));
+      let added = 0;
+      incoming.forEach(w => {
+        if (!existingIds.has(w.id)) { state.workouts.push(w); added++; }
+      });
+
+      persistWorkouts();
+      closeSettings();
+      showToast(`Imported ${added} new workout log${added !== 1 ? 's' : ''}!`);
+      renderView(state.view);
+    } catch {
+      showToast('Import failed — invalid file.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // reset so same file can be re-selected
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL workout data permanently? This cannot be undone.\n\nExport a backup first if you want to keep your data.')) return;
+  state.workouts      = [];
+  state.activeWorkout = [];
+  persistWorkouts();
+  persistActive();
+  updateBadge();
+  closeSettings();
+  renderView(state.view);
+  showToast('All data cleared.');
+}
+
+// ────────────────────────────────────────────────────────────
+//  PWA — manifest + service worker + install prompt
+// ────────────────────────────────────────────────────────────
+
+(function setupPWA() {
+  // Inline manifest via data URI
+  const manifest = {
+    name: 'GymTracker Pro',
+    short_name: 'GymTracker',
+    description: 'Track your gym workouts and progress',
+    start_url: './',
+    display: 'standalone',
+    background_color: '#030712',
+    theme_color: '#f97316',
+    orientation: 'portrait',
+    icons: [
+      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23f97316'/%3E%3Cpath d='M55 20L25 55h25v25l25-35H50z' fill='white'/%3E%3C/svg%3E", sizes: '192x192', type: 'image/svg+xml' },
+      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23f97316'/%3E%3Cpath d='M55 20L25 55h25v25l25-35H50z' fill='white'/%3E%3C/svg%3E", sizes: '512x512', type: 'image/svg+xml' },
+    ],
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  document.getElementById('pwa-manifest').setAttribute('href', url);
+
+  // Service worker (caches the app shell for offline use)
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE = 'gymtracker-v1';
+const SHELL = [self.location.href.replace(/\\/[^\\/]*$/, '/') || '/'];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+});`;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(() => {});
+  }
+})();
+
+// PWA install prompt (Chrome/Android "Install app" banner)
+let pwaInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  pwaInstallPrompt = e;
+  document.getElementById('pwa-install-btn-wrap').classList.remove('hidden');
+});
+
+function triggerPwaInstall() {
+  if (!pwaInstallPrompt) return;
+  pwaInstallPrompt.prompt();
+  pwaInstallPrompt.userChoice.then(() => { pwaInstallPrompt = null; });
+}
+
+// ────────────────────────────────────────────────────────────
+//  NAV STYLE (set initial active state)
+// ────────────────────────────────────────────────────────────
+
+function initNav() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.querySelector('svg').style.stroke = '#6b7280';
+    btn.querySelector('span').style.color = '#6b7280';
+  });
+  const active = document.getElementById('nav-library');
+  if (active) {
+    active.querySelector('svg').style.stroke = '#f97316';
+    active.querySelector('span').style.color = '#f97316';
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+//  INIT
+// ────────────────────────────────────────────────────────────
+
+loadData();
+initNav();
+renderView('library');
+updateBadge();
+
+</script>
+</body>
+</html>
