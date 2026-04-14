@@ -44,6 +44,22 @@
 <body class="bg-gray-950 text-gray-100 min-h-screen pb-20">
 
 <!-- ═══════════════════════════════════════════════════════════ -->
+<!--  PROFILE SELECTOR                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="profile-screen" class="fixed inset-0 bg-gray-950 z-50 flex flex-col items-center justify-center px-6" style="display:none!important">
+  <div class="mb-8 text-center">
+    <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/30 mx-auto mb-4">
+      <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+      </svg>
+    </div>
+    <h2 class="text-2xl font-bold">GymTracker</h2>
+    <p class="text-gray-500 text-sm mt-1">Wer bist du?</p>
+  </div>
+  <div id="profile-grid" class="w-full max-w-sm grid grid-cols-2 gap-3"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
 <!--  HEADER                                                     -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <header class="bg-gray-900/95 backdrop-blur border-b border-gray-800 sticky top-0 z-30 px-4 py-3">
@@ -61,6 +77,9 @@
         class="hidden items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow shadow-orange-500/30">
         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         <span id="badge-text">0</span>
+      </button>
+      <button onclick="showProfileScreen()" id="user-avatar"
+        class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg transition-transform active:scale-95">
       </button>
       <button onclick="openSettings()" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-800">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -291,6 +310,55 @@
 <script>
 
 // ────────────────────────────────────────────────────────────
+//  USERS
+// ────────────────────────────────────────────────────────────
+
+const USERS = [
+  { name: 'Jens',  color: '#f97316', initials: 'JE' },
+  { name: 'Niels', color: '#3b82f6', initials: 'NI' },
+  { name: 'Nico',  color: '#22c55e', initials: 'NC' },
+  { name: 'Laura', color: '#ec4899', initials: 'LA' },
+];
+
+function showProfileScreen() {
+  const screen = document.getElementById('profile-screen');
+  const grid   = document.getElementById('profile-grid');
+  screen.style.cssText = '';           // remove display:none!important
+  screen.style.display = 'flex';
+  grid.innerHTML = USERS.map(u => `
+    <button onclick="selectProfile('${u.name}')"
+      class="flex flex-col items-center gap-3 bg-gray-900 border border-gray-800 rounded-2xl p-5 active:scale-95 transition-transform card-press">
+      <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg"
+           style="background:${u.color};box-shadow:0 0 20px ${u.color}55">
+        ${u.initials}
+      </div>
+      <span class="text-sm font-semibold text-gray-200">${u.name}</span>
+    </button>
+  `).join('');
+}
+
+function selectProfile(name) {
+  localStorage.setItem('gt_user', name);
+  state.user = name;
+  document.getElementById('profile-screen').style.display = 'none';
+  updateUserAvatar();
+  state.workouts = [];
+  state.activeWorkout = [];
+  loadData();
+  renderView('library');
+  updateBadge();
+}
+
+function updateUserAvatar() {
+  const u   = USERS.find(u => u.name === state.user);
+  const btn = document.getElementById('user-avatar');
+  if (!u || !btn) return;
+  btn.textContent   = u.initials;
+  btn.style.background    = u.color;
+  btn.style.boxShadow     = `0 0 12px ${u.color}55`;
+}
+
+// ────────────────────────────────────────────────────────────
 //  DATA
 // ────────────────────────────────────────────────────────────
 
@@ -358,9 +426,10 @@ const state = {
   category:      'All',
   search:        '',
   activeWorkout: [],   // [{id, exercise, category, sets:[{weight,reps}]}]
-  modalEx:       null, // {name, imgId, category}
+  modalEx:       null,
   statsEx:       '',
-  workouts:      [],   // [{id, sessionId, date, exercise, category, sets}]
+  workouts:      [],   // [{id, sessionId, date, exercise, category, sets, user_name}]
+  user:          localStorage.getItem('gt_user') || '',
 };
 
 const charts = {};
@@ -379,18 +448,21 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ────────────────────────────────────────────────────────────
 
 function loadData() {
-  try { state.workouts      = JSON.parse(localStorage.getItem('gt_workouts') || '[]'); } catch { state.workouts = []; }
-  try { state.activeWorkout = JSON.parse(localStorage.getItem('gt_active')   || '[]'); } catch { state.activeWorkout = []; }
+  if (!state.user) { showProfileScreen(); return; }
+  const key = `gt_workouts_${state.user}`;
+  try { state.workouts      = JSON.parse(localStorage.getItem(key) || '[]'); } catch { state.workouts = []; }
+  try { state.activeWorkout = JSON.parse(localStorage.getItem('gt_active') || '[]'); } catch { state.activeWorkout = []; }
   syncFromSupabase();
 }
 
 async function syncFromSupabase() {
+  if (!state.user) return;
   try {
-    const { data, error } = await sb.from('workouts').select('*').order('date', { ascending: true });
+    const { data, error } = await sb.from('workouts').select('*')
+      .eq('user_name', state.user).order('date', { ascending: true });
     if (error) throw error;
     if (!data || data.length === 0) {
-      // No remote data yet — push local data if any
-      if (state.workouts.length > 0) await pushAllToSupabase();
+      if (state.workouts.length > 0) await pushToSupabase(state.workouts);
       return;
     }
     const remote = data.map(r => ({
@@ -399,13 +471,11 @@ async function syncFromSupabase() {
     }));
     const localIds  = new Set(state.workouts.map(w => w.id));
     const remoteIds = new Set(remote.map(w => w.id));
-    // Add remote records not yet local
     remote.forEach(w => { if (!localIds.has(w.id)) state.workouts.push(w); });
-    // Push local records not yet remote
     const onlyLocal = state.workouts.filter(w => !remoteIds.has(w.id));
     if (onlyLocal.length > 0) await pushToSupabase(onlyLocal);
     state.workouts.sort((a, b) => new Date(a.date) - new Date(b.date));
-    localStorage.setItem('gt_workouts', JSON.stringify(state.workouts));
+    localStorage.setItem(`gt_workouts_${state.user}`, JSON.stringify(state.workouts));
     renderView(state.view);
     updateBadge();
   } catch (e) {
@@ -414,10 +484,12 @@ async function syncFromSupabase() {
 }
 
 async function pushToSupabase(items) {
+  if (!state.user) return;
   try {
     const rows = items.map(w => ({
       id: w.id, session_id: w.sessionId, date: w.date,
       exercise: w.exercise, category: w.category, sets: w.sets,
+      user_name: state.user,
     }));
     const { error } = await sb.from('workouts').upsert(rows, { onConflict: 'id' });
     if (error) throw error;
@@ -426,12 +498,7 @@ async function pushToSupabase(items) {
   }
 }
 
-async function pushAllToSupabase() {
-  if (state.workouts.length === 0) return;
-  await pushToSupabase(state.workouts);
-}
-
-function persistWorkouts() { localStorage.setItem('gt_workouts', JSON.stringify(state.workouts)); }
+function persistWorkouts() { localStorage.setItem(`gt_workouts_${state.user}`, JSON.stringify(state.workouts)); }
 function persistActive()   { localStorage.setItem('gt_active',   JSON.stringify(state.activeWorkout)); }
 
 // ────────────────────────────────────────────────────────────
@@ -1266,22 +1333,6 @@ function showToast(msg) {
 }
 
 // ────────────────────────────────────────────────────────────
-//  NAV STYLE (set initial active state)
-// ────────────────────────────────────────────────────────────
-
-function initNav() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.querySelector('svg').style.stroke = '#6b7280';
-    btn.querySelector('span').style.color = '#6b7280';
-  });
-  const active = document.getElementById('nav-library');
-  if (active) {
-    active.querySelector('svg').style.stroke = '#f97316';
-    active.querySelector('span').style.color = '#f97316';
-  }
-}
-
-// ────────────────────────────────────────────────────────────
 //  SETTINGS
 // ────────────────────────────────────────────────────────────
 
@@ -1439,10 +1490,15 @@ function initNav() {
 //  INIT
 // ────────────────────────────────────────────────────────────
 
-loadData();
 initNav();
-renderView('library');
-updateBadge();
+if (!state.user) {
+  showProfileScreen();
+} else {
+  updateUserAvatar();
+  loadData();
+  renderView('library');
+  updateBadge();
+}
 
 </script>
 </body>
