@@ -447,39 +447,22 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 //  STORAGE
 // ────────────────────────────────────────────────────────────
 
-function loadData() {
+async function loadData() {
   if (!state.user) { showProfileScreen(); return; }
-  const key = `gt_workouts_${state.user}`;
-  try { state.workouts      = JSON.parse(localStorage.getItem(key) || '[]'); } catch { state.workouts = []; }
   try { state.activeWorkout = JSON.parse(localStorage.getItem('gt_active') || '[]'); } catch { state.activeWorkout = []; }
-  syncFromSupabase();
-}
-
-async function syncFromSupabase() {
-  if (!state.user) return;
   try {
     const { data, error } = await sb.from('workouts').select('*')
       .eq('user_name', state.user).order('date', { ascending: true });
     if (error) throw error;
-    if (!data || data.length === 0) {
-      if (state.workouts.length > 0) await pushToSupabase(state.workouts);
-      return;
-    }
-    const remote = data.map(r => ({
+    state.workouts = (data || []).map(r => ({
       id: r.id, sessionId: r.session_id, date: r.date,
       exercise: r.exercise, category: r.category, sets: r.sets,
     }));
-    const localIds  = new Set(state.workouts.map(w => w.id));
-    const remoteIds = new Set(remote.map(w => w.id));
-    remote.forEach(w => { if (!localIds.has(w.id)) state.workouts.push(w); });
-    const onlyLocal = state.workouts.filter(w => !remoteIds.has(w.id));
-    if (onlyLocal.length > 0) await pushToSupabase(onlyLocal);
-    state.workouts.sort((a, b) => new Date(a.date) - new Date(b.date));
-    localStorage.setItem(`gt_workouts_${state.user}`, JSON.stringify(state.workouts));
     renderView(state.view);
     updateBadge();
   } catch (e) {
-    console.warn('Supabase sync failed:', e.message);
+    console.warn('Supabase load failed:', e.message);
+    state.workouts = [];
   }
 }
 
@@ -498,8 +481,17 @@ async function pushToSupabase(items) {
   }
 }
 
-function persistWorkouts() { localStorage.setItem(`gt_workouts_${state.user}`, JSON.stringify(state.workouts)); }
-function persistActive()   { localStorage.setItem('gt_active',   JSON.stringify(state.activeWorkout)); }
+async function deleteFromSupabase(id) {
+  try {
+    const { error } = await sb.from('workouts').delete().eq('id', id);
+    if (error) throw error;
+  } catch (e) {
+    console.warn('Supabase delete failed:', e.message);
+  }
+}
+
+function persistWorkouts() { /* Supabase is source of truth — no localStorage */ }
+function persistActive()   { localStorage.setItem('gt_active', JSON.stringify(state.activeWorkout)); }
 
 // ────────────────────────────────────────────────────────────
 //  UTILS
@@ -1130,11 +1122,15 @@ function renderHistory() {
   `;
 }
 
-function deleteSession(key) {
+async function deleteSession(key) {
   if (!confirm('Delete this workout session?')) return;
-  state.workouts = state.workouts.filter(w => (w.sessionId || w.date.slice(0,13)) !== key);
-  persistWorkouts();
+  const toDelete = state.workouts.filter(w => (w.sessionId || w.date.slice(0,13)) === key);
+  state.workouts  = state.workouts.filter(w => (w.sessionId || w.date.slice(0,13)) !== key);
   renderHistory();
+  // Delete from Supabase
+  for (const w of toDelete) {
+    await deleteFromSupabase(w.id);
+  }
 }
 
 // ────────────────────────────────────────────────────────────
