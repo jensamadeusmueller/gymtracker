@@ -11,6 +11,7 @@
   <link rel="manifest" id="pwa-manifest">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -295,116 +296,57 @@
 
 const EXERCISES = {
   Chest: [
-    { name: 'Bench Press' },
-    { name: 'Incline Bench Press' },
-    { name: 'Decline Bench Press' },
-    { name: 'Dumbbell Flyes' },
-    { name: 'Incline Dumbbell Flyes' },
-    { name: 'Cable Crossover' },
-    { name: 'Pec Deck' },
-    { name: 'Chest Dips' },
-    { name: 'Push-ups' },
-    { name: 'Machine Chest Press' },
+    { name: 'Langhantel Schrägbank geführt' },
+    { name: 'Langhantel Flachbank' },
+    { name: 'Kurzhanteln Schrägbank' },
+    { name: 'Kabelzugmaschine' },
+    { name: 'Butterfly-Maschine' },
+    { name: 'Liegestütze' },
+    { name: 'Brustpresse' },
   ],
   Triceps: [
-    { name: 'Tricep Pushdown' },
-    { name: 'Skull Crushers' },
-    { name: 'Overhead Tricep Extension' },
-    { name: 'Close-Grip Bench Press' },
-    { name: 'Tricep Dips' },
-    { name: 'Diamond Push-ups' },
-    { name: 'Tricep Kickback' },
-    { name: 'Cable Overhead Extension' },
-    { name: 'JM Press' },
+    { name: 'Dips' },
+    { name: 'Kabelzug Push Down' },
+    { name: 'Kabelzug Push Up' },
+    { name: 'Push Down am Gerät' },
   ],
   Biceps: [
-    { name: 'Barbell Curl' },
-    { name: 'Dumbbell Curl' },
-    { name: 'Hammer Curl' },
-    { name: 'Preacher Curl' },
-    { name: 'Incline Dumbbell Curl' },
-    { name: 'Cable Curl' },
-    { name: 'Concentration Curl' },
-    { name: 'Spider Curl' },
-    { name: 'Reverse Curl' },
-    { name: 'Zottman Curl' },
+    { name: 'Biceps Curls an der Maschine' },
+    { name: 'Biceps am Kabelzug' },
+    { name: 'Klimmzüge Biceps' },
   ],
-  Back: [
+  Schultern: [
+    { name: 'Dumbbell Lateral Raise' },
+    { name: 'Dumbbell Front Raise' },
+    { name: 'Seated Dumbbell Press an der Maschine' },
+    { name: 'Dumbbell Press Kurzhanteln' },
+    { name: 'Standing Barbell Press' },
+    { name: 'Single Arm Cable Lateral Raise' },
+    { name: 'Face Pulls am Kabelzug' },
+  ],
+  Rücken: [
     { name: 'Deadlift' },
-    { name: 'Pull-ups' },
-    { name: 'Chin-ups' },
-    { name: 'Barbell Row' },
+    { name: 'Barbell Bent Over Row' },
     { name: 'Seated Cable Row' },
-    { name: 'Lat Pulldown' },
-    { name: 'Single-Arm Row' },
-    { name: 'T-Bar Row' },
-    { name: 'Straight-Arm Pulldown' },
-    { name: 'Good Mornings' },
-    { name: 'Rack Pulls' },
-    { name: 'Meadows Row' },
+    { name: 'Pull Ups' },
+    { name: 'Grip Pulldown an der Maschine' },
   ],
-  Shoulders: [
-    { name: 'Overhead Barbell Press' },
-    { name: 'Dumbbell Shoulder Press' },
-    { name: 'Lateral Raise' },
-    { name: 'Front Raise' },
-    { name: 'Arnold Press' },
-    { name: 'Face Pull' },
-    { name: 'Upright Row' },
-    { name: 'Rear Delt Fly' },
-    { name: 'Cable Lateral Raise' },
-    { name: 'Machine Shoulder Press' },
-    { name: 'Shrugs' },
-  ],
-  Legs: [
-    { name: 'Barbell Squat' },
-    { name: 'Front Squat' },
-    { name: 'Hack Squat' },
-    { name: 'Leg Press' },
-    { name: 'Romanian Deadlift' },
-    { name: 'Leg Curl (Lying)' },
-    { name: 'Leg Curl (Seated)' },
+  Beine: [
+    { name: 'Squats' },
+    { name: 'Legpress' },
+    { name: 'Beinbeuger auf dem Bauch' },
+    { name: 'Waden' },
     { name: 'Leg Extension' },
-    { name: 'Lunges' },
-    { name: 'Bulgarian Split Squat' },
-    { name: 'Calf Raises' },
-    { name: 'Goblet Squat' },
-    { name: 'Sumo Deadlift' },
-    { name: 'Step-ups' },
-  ],
-  Glutes: [
-    { name: 'Hip Thrust' },
-    { name: 'Glute Bridge' },
-    { name: 'Cable Kickback' },
-    { name: 'Sumo Squat' },
-    { name: 'Stiff-Leg Deadlift' },
-    { name: 'Donkey Kicks' },
-    { name: 'Abductor Machine' },
-    { name: 'Reverse Hyperextension' },
-  ],
-  Core: [
-    { name: 'Plank' },
-    { name: 'Ab Wheel' },
-    { name: 'Cable Crunch' },
-    { name: 'Hanging Leg Raise' },
-    { name: 'Leg Raises' },
-    { name: 'Russian Twists' },
-    { name: 'Crunches' },
-    { name: 'Side Plank' },
-    { name: 'Dragon Flag' },
-    { name: 'Pallof Press' },
   ],
 };
 
 const CAT_META = {
-  Chest:     { g1:'#7f1d1d', g2:'#dc2626', icon:'🫁' },
-  Triceps:   { g1:'#7c2d12', g2:'#ea580c', icon:'💪' },
-  Biceps:    { g1:'#1e3a5f', g2:'#3b82f6', icon:'🦾' },
-  Back:      { g1:'#14532d', g2:'#16a34a', icon:'🏋️' },
-  Shoulders: { g1:'#4a1d96', g2:'#9333ea', icon:'🏆' },
-  Legs:      { g1:'#713f12', g2:'#ca8a04', icon:'🦵' },
-  Glutes:    { g1:'#701a75', g2:'#c026d3', icon:'🍑' },
-  Core:      { g1:'#164e63', g2:'#0891b2', icon:'🎯' },
+  Chest:     { g1:'#7f1d1d', g2:'#b91c1c' },
+  Triceps:   { g1:'#7c2d12', g2:'#c2410c' },
+  Biceps:    { g1:'#1e3a5f', g2:'#1d4ed8' },
+  Schultern: { g1:'#4a1d96', g2:'#7c3aed' },
+  Rücken:    { g1:'#14532d', g2:'#15803d' },
+  Beine:     { g1:'#713f12', g2:'#b45309' },
 };
 
 // ────────────────────────────────────────────────────────────
@@ -425,13 +367,70 @@ const charts = {};
 let setCounter = 0;
 
 // ────────────────────────────────────────────────────────────
+//  SUPABASE
+// ────────────────────────────────────────────────────────────
+
+const SUPABASE_URL = 'https://wyopojaixsutxhkdpqcf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_iU8Wj16eh1U0DXLLauq_PA_775zq5LW';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ────────────────────────────────────────────────────────────
 //  STORAGE
 // ────────────────────────────────────────────────────────────
 
 function loadData() {
   try { state.workouts      = JSON.parse(localStorage.getItem('gt_workouts') || '[]'); } catch { state.workouts = []; }
   try { state.activeWorkout = JSON.parse(localStorage.getItem('gt_active')   || '[]'); } catch { state.activeWorkout = []; }
+  syncFromSupabase();
 }
+
+async function syncFromSupabase() {
+  try {
+    const { data, error } = await sb.from('workouts').select('*').order('date', { ascending: true });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      // No remote data yet — push local data if any
+      if (state.workouts.length > 0) await pushAllToSupabase();
+      return;
+    }
+    const remote = data.map(r => ({
+      id: r.id, sessionId: r.session_id, date: r.date,
+      exercise: r.exercise, category: r.category, sets: r.sets,
+    }));
+    const localIds  = new Set(state.workouts.map(w => w.id));
+    const remoteIds = new Set(remote.map(w => w.id));
+    // Add remote records not yet local
+    remote.forEach(w => { if (!localIds.has(w.id)) state.workouts.push(w); });
+    // Push local records not yet remote
+    const onlyLocal = state.workouts.filter(w => !remoteIds.has(w.id));
+    if (onlyLocal.length > 0) await pushToSupabase(onlyLocal);
+    state.workouts.sort((a, b) => new Date(a.date) - new Date(b.date));
+    localStorage.setItem('gt_workouts', JSON.stringify(state.workouts));
+    renderView(state.view);
+    updateBadge();
+  } catch (e) {
+    console.warn('Supabase sync failed:', e.message);
+  }
+}
+
+async function pushToSupabase(items) {
+  try {
+    const rows = items.map(w => ({
+      id: w.id, session_id: w.sessionId, date: w.date,
+      exercise: w.exercise, category: w.category, sets: w.sets,
+    }));
+    const { error } = await sb.from('workouts').upsert(rows, { onConflict: 'id' });
+    if (error) throw error;
+  } catch (e) {
+    console.warn('Supabase push failed:', e.message);
+  }
+}
+
+async function pushAllToSupabase() {
+  if (state.workouts.length === 0) return;
+  await pushToSupabase(state.workouts);
+}
+
 function persistWorkouts() { localStorage.setItem('gt_workouts', JSON.stringify(state.workouts)); }
 function persistActive()   { localStorage.setItem('gt_active',   JSON.stringify(state.activeWorkout)); }
 
@@ -458,102 +457,113 @@ function exerciseIcon(cat, size) {
   const w = size === 'lg' ? '64px' : '100%';
   const h = size === 'lg' ? '64px' : '100%';
   const s = `width:${w};height:${h};display:block;`;
+
+  // Body silhouette colour and highlight colour
+  const body = 'rgba(255,255,255,0.18)';
+  const hl   = 'rgba(255,255,255,0.92)';  // primary muscle — bright white
+  const hl2  = 'rgba(255,255,255,0.42)';  // secondary muscle — dimmer
+  const sl   = 'stroke-linecap="round" stroke-linejoin="round"';
+
+  // ── shared full-body silhouette (front view, viewBox 0 0 80 170) ──────────
+  // Accepts two SVG strings: pri = primary muscle highlight, sec = secondary
+  function frontBody(pri = '', sec = '') {
+    return `<svg viewBox="0 0 80 170" style="${s}" xmlns="http://www.w3.org/2000/svg">
+      <!-- secondary muscles (drawn first, behind primary) -->
+      ${sec}
+      <!-- body silhouette -->
+      <circle cx="40" cy="11" r="9"   fill="${body}"/>
+      <line   x1="40" y1="20" x2="40" y2="27" stroke="${body}" stroke-width="7"  ${sl}/>
+      <rect   x="26" y="27" width="28" height="46" rx="8" fill="${body}"/>
+      <rect   x="24" y="71" width="32" height="22" rx="7" fill="${body}"/>
+      <line   x1="17" y1="31" x2="11" y2="64" stroke="${body}" stroke-width="12" ${sl}/>
+      <line   x1="63" y1="31" x2="69" y2="64" stroke="${body}" stroke-width="12" ${sl}/>
+      <line   x1="10" y1="65" x2="8"  y2="92" stroke="${body}" stroke-width="9"  ${sl}/>
+      <line   x1="70" y1="65" x2="72" y2="92" stroke="${body}" stroke-width="9"  ${sl}/>
+      <line   x1="29" y1="93" x2="24" y2="136" stroke="${body}" stroke-width="15" ${sl}/>
+      <line   x1="51" y1="93" x2="56" y2="136" stroke="${body}" stroke-width="15" ${sl}/>
+      <line   x1="23" y1="137" x2="21" y2="163" stroke="${body}" stroke-width="11" ${sl}/>
+      <line   x1="57" y1="137" x2="59" y2="163" stroke="${body}" stroke-width="11" ${sl}/>
+      <!-- primary muscles (drawn on top) -->
+      ${pri}
+    </svg>`;
+  }
+
+  // back-view body (lats/traps visible)
+  function backBody(pri = '', sec = '') {
+    return `<svg viewBox="0 0 80 170" style="${s}" xmlns="http://www.w3.org/2000/svg">
+      ${sec}
+      <circle cx="40" cy="11" r="9"   fill="${body}"/>
+      <line   x1="40" y1="20" x2="40" y2="27" stroke="${body}" stroke-width="7"  ${sl}/>
+      <rect   x="26" y="27" width="28" height="46" rx="8" fill="${body}"/>
+      <rect   x="24" y="71" width="32" height="22" rx="7" fill="${body}"/>
+      <line   x1="17" y1="31" x2="11" y2="64" stroke="${body}" stroke-width="12" ${sl}/>
+      <line   x1="63" y1="31" x2="69" y2="64" stroke="${body}" stroke-width="12" ${sl}/>
+      <line   x1="10" y1="65" x2="8"  y2="92" stroke="${body}" stroke-width="9"  ${sl}/>
+      <line   x1="70" y1="65" x2="72" y2="92" stroke="${body}" stroke-width="9"  ${sl}/>
+      <line   x1="29" y1="93" x2="24" y2="136" stroke="${body}" stroke-width="15" ${sl}/>
+      <line   x1="51" y1="93" x2="56" y2="136" stroke="${body}" stroke-width="15" ${sl}/>
+      <line   x1="23" y1="137" x2="21" y2="163" stroke="${body}" stroke-width="11" ${sl}/>
+      <line   x1="57" y1="137" x2="59" y2="163" stroke="${body}" stroke-width="11" ${sl}/>
+      ${pri}
+    </svg>`;
+  }
+
   const icons = {
-    Chest: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <g style="animation:gt-float 2s ease-in-out infinite;transform-origin:50px 44px">
-        <rect x="14" y="41" width="72" height="7" rx="3.5" fill="rgba(255,255,255,.9)"/>
-        <rect x="7"  y="33" width="9"  height="23" rx="4"   fill="rgba(255,255,255,.75)"/>
-        <rect x="16" y="37" width="7"  height="15" rx="3"   fill="rgba(255,255,255,.55)"/>
-        <rect x="84" y="33" width="9"  height="23" rx="4"   fill="rgba(255,255,255,.75)"/>
-        <rect x="77" y="37" width="7"  height="15" rx="3"   fill="rgba(255,255,255,.55)"/>
-        <circle cx="32" cy="41" r="4.5" fill="rgba(255,255,255,.4)"/>
-        <circle cx="68" cy="41" r="4.5" fill="rgba(255,255,255,.4)"/>
-      </g>
-      <rect x="22" y="67" width="56" height="9" rx="5" fill="rgba(255,255,255,.2)"/>
-      <rect x="36" y="76" width="9"  height="12" rx="3" fill="rgba(255,255,255,.15)"/>
-      <rect x="55" y="76" width="9"  height="12" rx="3" fill="rgba(255,255,255,.15)"/>
-    </svg>`,
 
-    Biceps: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <g style="animation:gt-curl 2.2s ease-in-out infinite;transform-origin:52px 68px">
-        <line x1="52" y1="68" x2="37" y2="28" stroke="rgba(255,255,255,.85)" stroke-width="11" stroke-linecap="round"/>
-        <rect x="24" y="19" width="26" height="7" rx="3.5" fill="rgba(255,255,255,.9)"/>
-        <rect x="22" y="13" width="8"  height="20" rx="4"   fill="rgba(255,255,255,.7)"/>
-        <rect x="42" y="13" width="8"  height="20" rx="4"   fill="rgba(255,255,255,.7)"/>
-      </g>
-      <ellipse cx="52" cy="70" rx="12" ry="7" fill="rgba(255,255,255,.25)"/>
-      <line x1="52" y1="70" x2="52" y2="90" stroke="rgba(255,255,255,.35)" stroke-width="10" stroke-linecap="round"/>
-    </svg>`,
+    // ── CHEST: pectoralis major ──
+    Chest: frontBody(
+      /* pri – pecs */
+      `<ellipse cx="33" cy="44" rx="10" ry="12" fill="${hl}"/>
+       <ellipse cx="47" cy="44" rx="10" ry="12" fill="${hl}"/>`,
+      /* sec – front delts */
+      `<ellipse cx="20" cy="34" rx="7"  ry="8"  fill="${hl2}"/>
+       <ellipse cx="60" cy="34" rx="7"  ry="8"  fill="${hl2}"/>`
+    ),
 
-    Triceps: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <line x1="50" y1="8" x2="50" y2="28" stroke="rgba(255,255,255,.4)" stroke-width="3" stroke-dasharray="4,3"/>
-      <circle cx="50" cy="28" r="5" fill="rgba(255,255,255,.3)"/>
-      <g style="animation:gt-push 2s ease-in-out infinite;transform-origin:50px 34px">
-        <path d="M38 30 Q50 37 62 30" stroke="rgba(255,255,255,.85)" stroke-width="5" fill="none" stroke-linecap="round"/>
-        <line x1="39" y1="31" x2="30" y2="72" stroke="rgba(255,255,255,.85)" stroke-width="9" stroke-linecap="round"/>
-        <line x1="61" y1="31" x2="70" y2="72" stroke="rgba(255,255,255,.85)" stroke-width="9" stroke-linecap="round"/>
-        <circle cx="30" cy="74" r="5" fill="rgba(255,255,255,.65)"/>
-        <circle cx="70" cy="74" r="5" fill="rgba(255,255,255,.65)"/>
-      </g>
-    </svg>`,
+    // ── TRICEPS: back of upper arm ──
+    Triceps: frontBody(
+      `<line x1="17" y1="31" x2="11" y2="64" stroke="${hl}"  stroke-width="12" ${sl}/>
+       <line x1="63" y1="31" x2="69" y2="64" stroke="${hl}"  stroke-width="12" ${sl}/>`,
+      `<ellipse cx="33" cy="44" rx="9" ry="11" fill="${hl2}"/>
+       <ellipse cx="47" cy="44" rx="9" ry="11" fill="${hl2}"/>`
+    ),
 
-    Back: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <g style="animation:gt-pull 2.3s ease-in-out infinite;transform-origin:50px 22px">
-        <rect x="14" y="16" width="72" height="8"  rx="4"   fill="rgba(255,255,255,.85)"/>
-        <rect x="7"  y="12" width="9"  height="16" rx="3.5" fill="rgba(255,255,255,.65)"/>
-        <rect x="84" y="12" width="9"  height="16" rx="3.5" fill="rgba(255,255,255,.65)"/>
-        <line x1="32" y1="24" x2="40" y2="58" stroke="rgba(255,255,255,.75)" stroke-width="9" stroke-linecap="round"/>
-        <line x1="68" y1="24" x2="60" y2="58" stroke="rgba(255,255,255,.75)" stroke-width="9" stroke-linecap="round"/>
-      </g>
-      <ellipse cx="50" cy="72" rx="20" ry="11" fill="rgba(255,255,255,.18)"/>
-    </svg>`,
+    // ── BICEPS: front of upper arm ──
+    Biceps: frontBody(
+      `<ellipse cx="12" cy="47" rx="8" ry="11" fill="${hl}"/>
+       <ellipse cx="68" cy="47" rx="8" ry="11" fill="${hl}"/>`,
+      `<line x1="10" y1="65" x2="8"  y2="92" stroke="${hl2}" stroke-width="9" ${sl}/>
+       <line x1="70" y1="65" x2="72" y2="92" stroke="${hl2}" stroke-width="9" ${sl}/>`
+    ),
 
-    Shoulders: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <g style="animation:gt-float 2s ease-in-out infinite;transform-origin:50px 48px">
-        <rect x="17" y="44" width="66" height="7" rx="3.5" fill="rgba(255,255,255,.9)"/>
-        <rect x="9"  y="36" width="10" height="23" rx="4"   fill="rgba(255,255,255,.7)"/>
-        <rect x="81" y="36" width="10" height="23" rx="4"   fill="rgba(255,255,255,.7)"/>
-      </g>
-      <ellipse cx="50" cy="70" rx="14" ry="8" fill="rgba(255,255,255,.2)"/>
-      <circle  cx="50" cy="62" r="7"          fill="rgba(255,255,255,.3)"/>
-      <line x1="36" y1="64" x2="28" y2="86" stroke="rgba(255,255,255,.35)" stroke-width="8" stroke-linecap="round"/>
-      <line x1="64" y1="64" x2="72" y2="86" stroke="rgba(255,255,255,.35)" stroke-width="8" stroke-linecap="round"/>
-    </svg>`,
+    // ── SCHULTERN: deltoids ──
+    Schultern: frontBody(
+      `<circle cx="14" cy="33" r="10" fill="${hl}"/>
+       <circle cx="66" cy="33" r="10" fill="${hl}"/>`,
+      `<ellipse cx="33" cy="44" rx="8" ry="9"  fill="${hl2}"/>
+       <ellipse cx="47" cy="44" rx="8" ry="9"  fill="${hl2}"/>`
+    ),
 
-    Legs: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <g style="animation:gt-squat 2s ease-in-out infinite;transform-origin:50px 40px">
-        <rect x="20" y="36" width="60" height="7"  rx="3.5" fill="rgba(255,255,255,.85)"/>
-        <rect x="12" y="28" width="10" height="23" rx="4"   fill="rgba(255,255,255,.65)"/>
-        <rect x="78" y="28" width="10" height="23" rx="4"   fill="rgba(255,255,255,.65)"/>
-        <circle cx="34" cy="38" r="4.5" fill="rgba(255,255,255,.45)"/>
-        <circle cx="66" cy="38" r="4.5" fill="rgba(255,255,255,.45)"/>
-      </g>
-      <line x1="38" y1="54" x2="28" y2="88" stroke="rgba(255,255,255,.7)" stroke-width="9"  stroke-linecap="round"/>
-      <line x1="62" y1="54" x2="72" y2="88" stroke="rgba(255,255,255,.7)" stroke-width="9"  stroke-linecap="round"/>
-      <ellipse cx="50" cy="56" rx="14" ry="6" fill="rgba(255,255,255,.2)"/>
-    </svg>`,
+    // ── RÜCKEN: trapezius + lats (back view) ──
+    Rücken: backBody(
+      `<path d="M28 27 Q40 20 52 27 L50 42 Q40 48 30 42 Z" fill="${hl}"/>
+       <path d="M26 35 Q17 52 21 68 L30 62 Q28 50 28 35 Z" fill="${hl}"/>
+       <path d="M54 35 Q63 52 59 68 L50 62 Q52 50 52 35 Z" fill="${hl}"/>`,
+      `<rect x="29" y="62" width="22" height="14" rx="4" fill="${hl2}"/>
+       <line x1="17" y1="31" x2="11" y2="64" stroke="${hl2}" stroke-width="12" ${sl}/>
+       <line x1="63" y1="31" x2="69" y2="64" stroke="${hl2}" stroke-width="12" ${sl}/>`
+    ),
 
-    Glutes: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <g style="animation:gt-float 2.5s ease-in-out infinite;transform-origin:50px 58px">
-        <ellipse cx="34" cy="58" rx="21" ry="22" fill="rgba(255,255,255,.55)"/>
-        <ellipse cx="66" cy="58" rx="21" ry="22" fill="rgba(255,255,255,.55)"/>
-        <rect x="28" y="30" width="44" height="13" rx="7" fill="rgba(255,255,255,.38)"/>
-      </g>
-      <line x1="28" y1="82" x2="18" y2="96" stroke="rgba(255,255,255,.4)" stroke-width="7" stroke-linecap="round"/>
-      <line x1="72" y1="82" x2="82" y2="96" stroke="rgba(255,255,255,.4)" stroke-width="7" stroke-linecap="round"/>
-    </svg>`,
+    // ── BEINE: quads + calves ──
+    Beine: frontBody(
+      `<line x1="29" y1="93" x2="24" y2="136" stroke="${hl}"  stroke-width="15" ${sl}/>
+       <line x1="51" y1="93" x2="56" y2="136" stroke="${hl}"  stroke-width="15" ${sl}/>`,
+      `<line x1="23" y1="137" x2="21" y2="163" stroke="${hl2}" stroke-width="11" ${sl}/>
+       <line x1="57" y1="137" x2="59" y2="163" stroke="${hl2}" stroke-width="11" ${sl}/>`
+    ),
 
-    Core: `<svg viewBox="0 0 100 100" style="${s}" xmlns="http://www.w3.org/2000/svg">
-      <g style="animation:gt-pulse 1.8s ease-in-out infinite;transform-origin:50px 50px">
-        <rect x="36" y="18" width="28" height="64" rx="14" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.5"/>
-        <rect x="41" y="26" width="18" height="8" rx="4" fill="rgba(255,255,255,.7)"/>
-        <rect x="41" y="38" width="18" height="8" rx="4" fill="rgba(255,255,255,.6)"/>
-        <rect x="41" y="50" width="18" height="8" rx="4" fill="rgba(255,255,255,.5)"/>
-        <rect x="41" y="62" width="18" height="8" rx="4" fill="rgba(255,255,255,.4)"/>
-      </g>
-    </svg>`,
   };
-  return icons[cat] || icons['Core'];
+  return icons[cat] || icons['Chest'];
 }
 
 function getWorkoutsFor(name) {
@@ -949,15 +959,16 @@ function finishWorkout() {
   if (state.activeWorkout.length === 0) return;
   const date = new Date().toISOString();
   const sid  = genId();
+  const newItems = [];
 
   state.activeWorkout.forEach(item => {
-    state.workouts.push({
-      id: genId(), sessionId: sid, date,
-      exercise: item.exercise, category: item.category, sets: item.sets,
-    });
+    const entry = { id: genId(), sessionId: sid, date, exercise: item.exercise, category: item.category, sets: item.sets };
+    state.workouts.push(entry);
+    newItems.push(entry);
   });
 
   persistWorkouts();
+  pushToSupabase(newItems); // fire-and-forget, localStorage already saved
   state.activeWorkout = [];
   persistActive();
   updateBadge();
