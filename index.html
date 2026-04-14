@@ -1396,11 +1396,18 @@ function importData(event) {
   event.target.value = ''; // reset so same file can be re-selected
 }
 
-function clearAllData() {
-  if (!confirm('Delete ALL workout data permanently? This cannot be undone.\n\nExport a backup first if you want to keep your data.')) return;
+async function clearAllData() {
+  if (!confirm('Delete ALL workout data permanently? This cannot be undone.')) return;
+  // Delete all rows for this user from Supabase
+  try {
+    const { error } = await sb.from('workouts').delete().eq('user_name', state.user);
+    if (error) throw error;
+  } catch (e) {
+    showToast('Fehler beim Löschen — bitte nochmal versuchen.');
+    return;
+  }
   state.workouts      = [];
   state.activeWorkout = [];
-  persistWorkouts();
   persistActive();
   updateBadge();
   closeSettings();
